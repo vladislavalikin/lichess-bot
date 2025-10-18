@@ -31,11 +31,12 @@ while (true)
                 case "gameFinish": 
                     break;
                 case "challenge": 
-                    var challange = JsonSerializer.Deserialize<LCChallange>(message);
+                    var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message);
                     break;
                 case "challengeDeclined": 
                     break;
-                case "challengeCanceled": 
+                case "challengeCanceled":
+                    var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message);
                     break;
             }
         }
