@@ -1,48 +1,69 @@
 ﻿using ServiceStack;
 using System.Net.Http.Headers;
 using System.Text.Json;
-
-using chessbot.Models.StreamEventModels;
+using LichessNET.API;
+using chessbot.LichessBot.Models.StreamEventModels;
+using chessbot.LichessBot;
 
 
 Console.WriteLine("Hello, World!");
 
-var _httpClient = new HttpClient();
-_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "lip_1zLfgbViMozLx9vwBSSd");
-var url = "https://lichess.org/api/stream/event";
+var lichessBot = new LichessBot(bearer: "lip_1zLfgbViMozLx9vwBSSd");
+
+//var _httpClient = new HttpClient();
+//_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "lip_1zLfgbViMozLx9vwBSSd");
+//var url = "https://lichess.org/api/stream/event";
+
+lichessBot.OnChallanged += LichessBot_OnChallanged;
+
+async void LichessBot_OnChallanged(LCChallangeEvent e)
+{
+    var opponentRating = e.challenge.challenger.rating;
+    if (opponentRating > 1500)
+    {
+        if (e.challenge.challenger.name == "VladislavAlikin")
+        {
+            var isAccept = await lichessBot.AcceptChallangeAsync(e.challenge.id);
+            return;
+        }
+    }
+
+    Console.WriteLine($"Rat is declined: {e.challenge.challenger.name}");
+    var isDeclined = await lichessBot.DeclineChallageAsync(e.challenge.id);
+}
 
 while (true)
 {
     try
     {
-        Console.WriteLine("Establishing connection");
-        using var streamReader = new StreamReader(await _httpClient.GetStreamAsync(url));
-        while (!streamReader.EndOfStream)
-        {
-            var message = await streamReader.ReadLineAsync();
-            Console.WriteLine($"Received message: {message}");
-            if (message.IsEmpty())
-                continue;
-            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
-            switch (eventType.type)
-            {
-                case "gameStart": 
-                    var Gamestarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
-                    break;
-                case "gameFinish": 
-                    var gamefinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
-                    break;
-                case "challenge": 
-                    var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message);
-                    break;
-                case "challengeDeclined": 
-                    var Declinedchallange = JsonSerializer.Deserialize<LCChallangeDeclinedEvent>(message);
-                    break;
-                case "challengeCanceled":
-                    var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message);
-                    break;
-            }
-        }
+        //Console.WriteLine("Establishing connection");
+        //using var streamReader = new StreamReader(await _httpClient.GetStreamAsync(url));
+        //while (!streamReader.EndOfStream)
+        //{
+        //    var message = await streamReader.ReadLineAsync();
+        //    Console.WriteLine($"Received message: {message}");
+        //    if (message.IsEmpty())
+        //        continue;
+        //    var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
+        //    switch (eventType.type)
+        //    {
+        //        case "gameStart": 
+        //            var Gamestarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
+        //            break;
+        //        case "gameFinish": 
+        //            var gamefinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
+        //            break;
+        //        case "challenge": 
+        //            var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message);
+        //            break;
+        //        case "challengeDeclined": 
+        //            var Declinedchallange = JsonSerializer.Deserialize<LCChallangeDeclinedEvent>(message);
+        //            break;
+        //        case "challengeCanceled":
+        //            var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message);
+        //            break;
+        //    }
+        //}
     }
     catch (Exception ex)
     {

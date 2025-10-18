@@ -1,4 +1,4 @@
-﻿namespace chessbot.Models.StreamEventModels
+﻿namespace chessbot.LichessBot.Models.StreamEventModels
 {
     public class LCStreamEvent
     {
