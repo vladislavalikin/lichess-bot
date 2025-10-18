@@ -27,13 +27,16 @@ while (true)
             switch (eventType.type)
             {
                 case "gameStart": 
+                    var Gamestarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
                     break;
                 case "gameFinish": 
+                    var gamefinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
                     break;
                 case "challenge": 
                     var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message);
                     break;
                 case "challengeDeclined": 
+                    var Declinedchallange = JsonSerializer.Deserialize<LCChallangeDeclinedEvent>(message);
                     break;
                 case "challengeCanceled":
                     var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message);
@@ -69,7 +72,7 @@ return 0;
 //        continue;
 //    foreach (var challange in challanges.In)
 //    {
-//        if (!await client.AcceptChallengeAsync(challange.Id))
+//       if (!await client.AcceptChallengeAsync(challange.Id))
 //            continue;
 //        var gameId = challange.Id;
 //        var game = new ChessGame();

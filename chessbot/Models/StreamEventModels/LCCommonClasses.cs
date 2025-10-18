@@ -55,4 +55,37 @@
         public bool bot { get; set; }
         public bool board { get; set; }
     }
+
+    public class Opponent
+    {
+        public string id { get; set; }
+        public string username { get; set; }
+        public int rating { get; set; }
+    }
+
+    public class Status
+    {
+        public int id { get; set; }
+        public string name { get; set; }
+    }
+    public class Game
+    {
+        public string fullId { get; set; }
+        public string gameId { get; set; }
+        public string fen { get; set; }
+        public string color { get; set; }
+        public string lastMove { get; set; }
+        public string source { get; set; }
+        public Status status { get; set; }
+        public Variant variant { get; set; }
+        public string speed { get; set; }
+        public string perf { get; set; }
+        public bool rated { get; set; }
+        public bool hasMoved { get; set; }
+        public Opponent opponent { get; set; }
+        public bool isMyTurn { get; set; }
+        public int secondsLeft { get; set; }
+        public Compat compat { get; set; }
+        public string id { get; set; }
+    }
 }
