@@ -15,4 +15,8 @@
     <ProjectReference Include="..\LichessNET-master\LichessNET\LichessNET.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\GameModels\" />
+  </ItemGroup>
+
 </Project>

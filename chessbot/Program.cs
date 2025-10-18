@@ -1,20 +1,13 @@
-﻿// See https://aka.ms/new-console-template for more information
-using LichessNET.API;
-using LichessNET.Entities.Game;
-using LichessNET.Entities.Social;
-using System;
-using System.Net;
+﻿using ServiceStack;
 using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
-using static System.Net.WebRequestMethods;
+using System.Text.Json;
 
-var _httpClient = new HttpClient();
+using chessbot.Models.StreamEventModels;
 
 
 Console.WriteLine("Hello, World!");
 
-
+var _httpClient = new HttpClient();
 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "lip_1zLfgbViMozLx9vwBSSd");
 var url = "https://lichess.org/api/stream/event";
 
@@ -27,7 +20,24 @@ while (true)
         while (!streamReader.EndOfStream)
         {
             var message = await streamReader.ReadLineAsync();
-            Console.WriteLine($"Received price update: {message}");
+            Console.WriteLine($"Received message: {message}");
+            if (message.IsEmpty())
+                continue;
+            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
+            switch (eventType.type)
+            {
+                case "gameStart": 
+                    break;
+                case "gameFinish": 
+                    break;
+                case "challenge": 
+                    var challange = JsonSerializer.Deserialize<LCChallange>(message);
+                    break;
+                case "challengeDeclined": 
+                    break;
+                case "challengeCanceled": 
+                    break;
+            }
         }
     }
     catch (Exception ex)
@@ -104,7 +114,7 @@ return 0;
 
 //            else
 //                Console.WriteLine($"We made a move '{move}'!");
-            
+
 //            await Task.Delay(200);
 
 //            Console.WriteLine($"  Game state is '{gameState}'");
@@ -114,4 +124,3 @@ return 0;
 //        return Task.CompletedTask;
 //    }
 //}
-    
