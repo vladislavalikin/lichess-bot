@@ -1,58 +1,70 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using chessbot.LichessBot.Models.GameEventModels;
-using chessbot.LichessBot.Models.StreamEventModels;
+﻿using System.Text.Json;
 using ServiceStack;
 
-namespace chessbot.LichessBot.Models
+using chessbot.LichessBot.Models.GameEventModels;
+using chessbot.LichessBot.Models.StreamEventModels;
+
+
+namespace chessbot.LichessBot.Models;
+
+public class LichessGame
 {
+    private HttpClient HttpClient;
+    public string GameId { get; }
 
-    public class LichessGame
+    public LichessGame(HttpClient httpClient, string gameId)
     {
-        private HttpClient HttpClient;
-        public string GameId { get; }
+        HttpClient = httpClient;
+        GameId = gameId;
 
-        public LichessGame(HttpClient httpClient, string gameId)
+        GameLoop();
+        //MoveLoop();
+    }
+
+    private async void GameLoop()
+    {
+        Console.WriteLine("Game started");
+        var url = $"https://lichess.org/api/bot/game/stream/{GameId}";
+        using var streamReader = new StreamReader(await HttpClient.GetStreamAsync(url));
+        while (!streamReader.EndOfStream)
         {
-            HttpClient = httpClient;
-            GameId = gameId;
-
-            MainLoop();
-        }
-
-        private async void MainLoop()
-        {
-            Console.WriteLine("Game started");
-            var url = $"https://lichess.org/api/stream/{GameId}";
-            using var streamReader = new StreamReader(await HttpClient.GetStreamAsync(url));
-            while (!streamReader.EndOfStream)
+            var message = await streamReader.ReadLineAsync();
+            Console.WriteLine($"Game message: {message}");
+            if (message.IsEmpty())
+                continue;
+            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
+            switch (eventType.type)
             {
-                var message = await streamReader.ReadLineAsync();
-                Console.WriteLine($"Game message: {message}");
-                if (message.IsEmpty())
-                    continue;
-                var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
-                switch (eventType.type)
-                {
-                    case "gameFullEvent":
-                        var GameFull = JsonSerializer.Deserialize<GameFullEvent>(message);
-                        break;
-                    case "gameStateEvent":
-                        var gameState = JsonSerializer.Deserialize<GameStateEvent>(message);
-                        break;
-                    case "OpponentGoneEvent":
-                        var OpponentGone = JsonSerializer.Deserialize<OpponentGoneEvent>(message);
-                        break;
-                    case "ChatLineEvent":
-                        var ChatLine = JsonSerializer.Deserialize<ChatLineEvent>(message);
-                        break;
-                }
+                case "gameFull":
+                    var GameFull = JsonSerializer.Deserialize<GameFullEvent>(message);
+                    break;
+                case "gameState":
+                    var gameState = JsonSerializer.Deserialize<GameStateEvent>(message);
+                    break;
+                case "opponentGone":
+                    var OpponentGone = JsonSerializer.Deserialize<OpponentGoneEvent>(message);
+                    break;
+                case "chatLine":
+                    var ChatLine = JsonSerializer.Deserialize<ChatLineEvent>(message);
+                    break;
             }
+        }
+    }
+
+    private async void MoveLoop()
+    {
+        Console.WriteLine("Game started");
+        var url = $"https://lichess.org/api/stream/game/{GameId}";
+        using var streamReader = new StreamReader(await HttpClient.GetStreamAsync(url));
+        while (!streamReader.EndOfStream)
+        {
+            var message = await streamReader.ReadLineAsync();
+            if (message.IsEmpty())
+                continue;
+            Console.WriteLine($"Game move: {message}");
+            if (message.IsEmpty())
+                continue;
+            //var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
         }
     }
 }

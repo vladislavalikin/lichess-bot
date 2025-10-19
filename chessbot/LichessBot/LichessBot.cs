@@ -5,6 +5,7 @@ using System.Web;
 using ServiceStack;
 
 using chessbot.LichessBot.Models.StreamEventModels;
+using chessbot.LichessBot.Models;
 
 
 namespace chessbot.LichessBot;
@@ -31,6 +32,8 @@ public class LichessBot
     public delegate void OnChallangeCanceledEvent(LCChallangeCanceledEvent e);
     public event OnChallangeCanceledEvent OnChallangeCanceled;
 
+    public List<LichessGame> Games { get; set; } = new List<LichessGame>();
+
     public LichessBot(string bearer) 
     {
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
@@ -54,6 +57,7 @@ public class LichessBot
                 case "gameStart":
                     var gameStarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
                     OnGameStarted?.Invoke(gameStarted);
+                    Games.Add(new LichessGame(_httpClient, gameStarted.game.id));
                     break;
                 case "gameFinish":
                     var gameFinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);

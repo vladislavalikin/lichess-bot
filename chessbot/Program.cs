@@ -20,7 +20,7 @@ lichessBot.OnGameStarted += LichessBot_OnGameStarted;
 
 void LichessBot_OnGameStarted(LCGameStartedEvent e)
 {
-    throw new NotImplementedException();
+
 }
 
 async void LichessBot_OnChallanged(LCChallangeEvent e)
