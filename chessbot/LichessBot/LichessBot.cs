@@ -6,6 +6,7 @@ using ServiceStack;
 
 using chessbot.LichessBot.Models.StreamEventModels;
 using chessbot.LichessBot.Models;
+using LichessNET.Entities.Game;
 
 
 namespace chessbot.LichessBot;
@@ -79,6 +80,13 @@ public class LichessBot
         }
     }
 
+    public async Task<bool> MakeMove(string gameId, string move)
+    {
+        var request = new HttpRequestMessage();
+        request.RequestUri = GetUriBuilder($"https://lichess.org/api/bot/game/{gameId}/{move}").Uri;
+        var response = await SendRequestAsync(request, HttpMethod.Post);
+        return response.Content.ReadAsStringAsync().Result.Contains("true");
+    }
 
     public async Task<bool> AcceptChallangeAsync(string challengeId)
     {
