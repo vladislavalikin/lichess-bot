@@ -4,6 +4,7 @@ using System.Text.Json;
 using LichessNET.API;
 using chessbot.LichessBot.Models.StreamEventModels;
 using chessbot.LichessBot;
+using chessbot.LichessBot.Models;
 
 
 Console.WriteLine("Hello, World!");
@@ -15,6 +16,12 @@ var lichessBot = new LichessBot(bearer: "lip_1zLfgbViMozLx9vwBSSd");
 //var url = "https://lichess.org/api/stream/event";
 
 lichessBot.OnChallanged += LichessBot_OnChallanged;
+lichessBot.OnGameStarted += LichessBot_OnGameStarted;
+
+void LichessBot_OnGameStarted(LCGameStartedEvent e)
+{
+    throw new NotImplementedException();
+}
 
 async void LichessBot_OnChallanged(LCChallangeEvent e)
 {
@@ -28,7 +35,7 @@ async void LichessBot_OnChallanged(LCChallangeEvent e)
         }
     }
 
-    Console.WriteLine($"Rat is declined: {e.challenge.challenger.name}");
+    Console.WriteLine($"Rat({e.challenge.challenger.name}) is declined: ");
     var isDeclined = await lichessBot.DeclineChallageAsync(e.challenge.id);
 }
 

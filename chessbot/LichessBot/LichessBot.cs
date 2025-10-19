@@ -2,10 +2,10 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Web;
-using chessbot.LichessBot.Models.StreamEventModels;
-using Microsoft.VisualBasic;
 using ServiceStack;
-using ServiceStack.Web;
+
+using chessbot.LichessBot.Models.StreamEventModels;
+
 
 namespace chessbot.LichessBot;
 
@@ -18,9 +18,22 @@ public class LichessBot
     public delegate void ChallengeEvent(LCChallangeEvent e); 
     public event ChallengeEvent OnChallanged;
 
+    public delegate void OnGameStartedEvent(LCGameStartedEvent e);
+    public event OnGameStartedEvent OnGameStarted;
+
+
+    public delegate void OnGameFinishedEvent(LCGameFinishedEvent e);
+    public event OnGameFinishedEvent OnGameFinished;
+
+    public delegate void OnChallangeDeclinedEvent(LCChallangeDeclinedEvent e);
+    public event OnChallangeDeclinedEvent OnChallangeDeclined;
+
+    public delegate void OnChallangeCanceledEvent(LCChallangeCanceledEvent e);
+    public event OnChallangeCanceledEvent OnChallangeCanceled;
+
     public LichessBot(string bearer) 
     {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "lip_1zLfgbViMozLx9vwBSSd");
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
         MainLoop();
     }
 
@@ -39,10 +52,12 @@ public class LichessBot
             switch (eventType.type)
             {
                 case "gameStart":
-                    var Gamestarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
+                    var gameStarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
+                    OnGameStarted?.Invoke(gameStarted);
                     break;
                 case "gameFinish":
-                    var gamefinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
+                    var gameFinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
+                    OnGameFinished?.Invoke(gameFinished);
                     break;
                 case "challenge":
                     var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message);
@@ -50,9 +65,11 @@ public class LichessBot
                     break;
                 case "challengeDeclined":
                     var Declinedchallange = JsonSerializer.Deserialize<LCChallangeDeclinedEvent>(message);
+                    OnChallangeDeclined?.Invoke(Declinedchallange);
                     break;
                 case "challengeCanceled":
                     var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message);
+                    OnChallangeCanceled?.Invoke(challangeCanceled);
                     break;
             }
         }
