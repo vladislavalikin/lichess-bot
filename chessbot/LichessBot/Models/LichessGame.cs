@@ -11,14 +11,18 @@ public class LichessGame
 {
     private HttpClient HttpClient;
     public string GameId { get; }
+    public Game Game { get; }
 
-    public LichessGame(HttpClient httpClient, string gameId)
+
+    public delegate void gameStateEvent(LichessGame game, GameStateEvent e);
+    public event gameStateEvent OnGameState;
+
+    public LichessGame(HttpClient httpClient, Game game)
     {
         HttpClient = httpClient;
-        GameId = gameId;
+        Game = game;
 
         GameLoop();
-        //MoveLoop();
     }
 
     private async void GameLoop()
@@ -40,6 +44,7 @@ public class LichessGame
                     break;
                 case "gameState":
                     var gameState = JsonSerializer.Deserialize<GameStateEvent>(message);
+                    OnGameState?.Invoke(this, gameState);
                     break;
                 case "opponentGone":
                     var OpponentGone = JsonSerializer.Deserialize<OpponentGoneEvent>(message);
@@ -51,20 +56,11 @@ public class LichessGame
         }
     }
 
-    private async void MoveLoop()
+    public async Task<bool> MakeMove(string gameId, string move)
     {
-        Console.WriteLine("Game started");
-        var url = $"https://lichess.org/api/stream/game/{GameId}";
-        using var streamReader = new StreamReader(await HttpClient.GetStreamAsync(url));
-        while (!streamReader.EndOfStream)
-        {
-            var message = await streamReader.ReadLineAsync();
-            if (message.IsEmpty())
-                continue;
-            Console.WriteLine($"Game move: {message}");
-            if (message.IsEmpty())
-                continue;
-            //var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
-        }
+        var request = new HttpRequestMessage();
+        request.RequestUri = GetUriBuilder($"https://lichess.org/api/bot/game/{gameId}/move/{move}").Uri;
+        var response = await SendRequestAsync(request, HttpMethod.Post);
+        return response.Content.ReadAsStringAsync().Result.Contains("true");
     }
 }

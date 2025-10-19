@@ -7,6 +7,7 @@ using ServiceStack;
 using chessbot.LichessBot.Models.StreamEventModels;
 using chessbot.LichessBot.Models;
 using LichessNET.Entities.Game;
+using chessbot.LichessBot.Models.GameEventModels;
 
 
 namespace chessbot.LichessBot;
@@ -33,6 +34,9 @@ public class LichessBot
     public delegate void OnChallangeCanceledEvent(LCChallangeCanceledEvent e);
     public event OnChallangeCanceledEvent OnChallangeCanceled;
 
+    public delegate void gameStateEvent(LichessGame game, GameStateEvent e);
+    public event gameStateEvent OnGameState;
+
     public List<LichessGame> Games { get; set; } = new List<LichessGame>();
 
     public LichessBot(string bearer) 
@@ -58,7 +62,9 @@ public class LichessBot
                 case "gameStart":
                     var gameStarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
                     OnGameStarted?.Invoke(gameStarted);
-                    Games.Add(new LichessGame(_httpClient, gameStarted.game.id));
+                    var newGame = new LichessGame(_httpClient, gameStarted.game);
+                    Games.Add(newGame);
+                    newGame.OnGameState += NewGame_OnGameState;
                     break;
                 case "gameFinish":
                     var gameFinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
@@ -80,12 +86,9 @@ public class LichessBot
         }
     }
 
-    public async Task<bool> MakeMove(string gameId, string move)
+    private void NewGame_OnGameState(LichessGame game, GameStateEvent e)
     {
-        var request = new HttpRequestMessage();
-        request.RequestUri = GetUriBuilder($"https://lichess.org/api/bot/game/{gameId}/{move}").Uri;
-        var response = await SendRequestAsync(request, HttpMethod.Post);
-        return response.Content.ReadAsStringAsync().Result.Contains("true");
+        OnGameState?.Invoke(game, e);
     }
 
     public async Task<bool> AcceptChallangeAsync(string challengeId)
@@ -104,21 +107,22 @@ public class LichessBot
         return response.Content.ReadAsStringAsync().Result.Contains("true");
     }
 
-    private UriBuilder GetUriBuilder(string endpoint, params Tuple<string, string>[] queryParameters)
+    public UriBuilder GetUriBuilder(string endpoint, params Tuple<string, string>[] queryParameters)
     {
         var builder = new UriBuilder(endpoint);
         builder.Port = -1;
 
         var query = HttpUtility.ParseQueryString(builder.Query);
 
-        foreach (var param in queryParameters) query[param.Item1] = param.Item2;
+        foreach (var param in queryParameters) 
+            query[param.Item1] = param.Item2;
 
         builder.Query = query.ToString();
 
         return builder;
     }
 
-    private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, HttpMethod method = null,
+    public  async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, HttpMethod method = null,
     HttpContent content = null)
     {
         if (method == null) 
