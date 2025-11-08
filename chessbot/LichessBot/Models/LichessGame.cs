@@ -25,11 +25,6 @@ public class LichessGame
     private List<string> blackMoves = new List<string> { "h7h6", "g7g6", "f7f6", "e7e6", "d7d6", "c7c6", "b7b6", "a7a6" };
     private List<string> whiteMoves = new List<string> { "h2h3", "g2g3", "f2f3", "e2e3", "d2d3", "c2c3", "b2b3", "a2a3" };
 
-    const string FirstQuestion = "First question: ";
-    const string SecondQuestion = "Another question: ";
-    const string FinalQuestion = "Final question: ";
-    static AutoResetEvent Done = new AutoResetEvent(false);
-
     public LichessGame(LichessConnection connection, Game game)
     {
         Connection = connection;
@@ -51,19 +46,25 @@ public class LichessGame
         Console.WriteLine("Executing " + TheProgram);
         engine.Start();
         await InitNewEngineGame(engine);
-        Done.WaitOne();
     }
 
-    private async string GetBestMove(GameStateEvent gameState)
+    public async Task<string> GetBestMove(GameStateEvent gameState)
     {
         engine.StandardInput.WriteLine($"position stratpos moves {gameState.moves} ");
         engine.StandardInput.WriteLine("isready");
-        while (await engine.StandardOutput.ReadLineAsync() != "readyok") { }
+        var line = "";
+
+        while (!(line = await engine.StandardOutput.ReadLineAsync())?.Contains("readyok") ?? false) { }
 
         engine.StandardInput.WriteLine($"go wtime {gameState.wtime} btime {gameState.btime} winc {gameState.winc} binc {gameState.binc}");
 
+        var bestmove = "";
+        while (!(line = await engine.StandardOutput.ReadLineAsync())?.Contains("bestmove") ?? false)
+        {
+            bestmove = line.Split(' ')?[1]; // bestmove e2e4 ponder g1f1
+        }
 
-        return BestMove;
+        return bestmove;
     }
 
 
@@ -119,7 +120,8 @@ public class LichessGame
     {
         if (lcGame.Game.isMyTurn)
         {
-            await lcGame.MakeMove(lcGame.Game.id, lcGame.Game.color == "white" ? whiteMoves[pos++] : blackMoves[pos++]);
+            var bestmove = await GetBestMove(new GameStateEvent());
+            //await lcGame.MakeMove(lcGame.Game.id, lcGame.Game.color == "white" ? whiteMoves[pos++] : blackMoves[pos++]);
         }
     }
 
