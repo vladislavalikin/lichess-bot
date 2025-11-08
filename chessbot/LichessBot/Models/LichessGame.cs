@@ -3,6 +3,8 @@ using ServiceStack;
 
 using chessbot.LichessBot.Models.GameEventModels;
 using chessbot.LichessBot.Models.StreamEventModels;
+using System.Diagnostics;
+using Microsoft.VisualBasic;
 
 namespace chessbot.LichessBot.Models;
 
@@ -13,6 +15,8 @@ public class LichessGame
     public string GameId { get; }
     public Game Game { get; }
 
+    private Process engine;
+    public List<string> Moves = new List<string>();
 
     public delegate void gameStateEvent(LichessGame game, GameStateEvent e);
     public event gameStateEvent OnGameState;
@@ -21,12 +25,54 @@ public class LichessGame
     private List<string> blackMoves = new List<string> { "h7h6", "g7g6", "f7f6", "e7e6", "d7d6", "c7c6", "b7b6", "a7a6" };
     private List<string> whiteMoves = new List<string> { "h2h3", "g2g3", "f2f3", "e2e3", "d2d3", "c2c3", "b2b3", "a2a3" };
 
+    const string FirstQuestion = "First question: ";
+    const string SecondQuestion = "Another question: ";
+    const string FinalQuestion = "Final question: ";
+    static AutoResetEvent Done = new AutoResetEvent(false);
+
     public LichessGame(LichessConnection connection, Game game)
     {
         Connection = connection;
         Game = game;
-
+        StartEngine();
         GameLoop();
+    }
+
+    public async void StartEngine()
+    {
+        const string TheProgram = @"SOS-51_Arena.exe";
+        engine = new Process();
+        var psi = new ProcessStartInfo(TheProgram);
+        psi.UseShellExecute = false;
+        psi.CreateNoWindow = true;
+        psi.RedirectStandardInput = true;
+        psi.RedirectStandardOutput = true;
+        engine.StartInfo = psi;
+        Console.WriteLine("Executing " + TheProgram);
+        engine.Start();
+        await InitNewEngineGame(engine);
+        Done.WaitOne();
+    }
+
+    private async string GetBestMove(GameStateEvent gameState)
+    {
+        engine.StandardInput.WriteLine($"position stratpos moves {gameState.moves} ");
+        engine.StandardInput.WriteLine("isready");
+        while (await engine.StandardOutput.ReadLineAsync() != "readyok") { }
+
+        engine.StandardInput.WriteLine($"go wtime {gameState.wtime} btime {gameState.btime} winc {gameState.winc} binc {gameState.binc}");
+
+
+        return BestMove;
+    }
+
+
+
+    private static async Task InitNewEngineGame(Process p)
+    {
+        p.StandardInput.WriteLine("uci");
+        while (await p.StandardOutput.ReadLineAsync() != "uciok") { }
+        p.StandardInput.WriteLine("ucinewgame");
     }
 
     private async void GameLoop()
