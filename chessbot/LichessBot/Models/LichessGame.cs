@@ -58,7 +58,7 @@ public class LichessGame
         await engine.StandardInput.WriteLineAsync($"position startpos moves {gameState.moves ?? ""} ");
         await engine.StandardInput.WriteLineAsync($"go wtime {actualwtime} btime {actualbtime} winc {actualwinc} binc {actualbinc}");
         var line = "";
-
+        
         var bestmove = "";
         do
         {

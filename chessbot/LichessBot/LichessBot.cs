@@ -113,17 +113,12 @@ public class LichessBot
 
     async void LichessBot_OnChallanged(LCChallangeEvent e)
     {
-        var opponentRating = e.challenge.challenger.rating;
-        if (opponentRating > 1500)
-        {
-            if (e.challenge.challenger.name == "VladislavAlikin" || e.challenge.challenger.name == "AlikinSergey")
-            {
-                var isAccept = await AcceptChallangeAsync(e.challenge.id);
-                return;
-            }
-        }
+        if (Games.Count >= 1)
+            await DeclineChallageAsync(e.challenge.id);
+        if (e.challenge.rated)
+            await DeclineChallageAsync(e.challenge.id);
 
-        Console.WriteLine($"Rat({e.challenge.challenger.name}) is declined: ");
-        var isDeclined = await DeclineChallageAsync(e.challenge.id);
+        await AcceptChallangeAsync(e.challenge.id);
+        return;
     }
 }
