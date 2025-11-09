@@ -64,7 +64,9 @@ public class LichessBot
                     break;
                 case "gameFinish":
                     var gameFinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
-                    Games.Remove(Games.FirstOrDefault(g => g.Game.id == gameFinished.game.id));
+                    var game = Games.FirstOrDefault(g => g.Game.id == gameFinished.game.id);
+                    game.FinishGame();
+                    Games.Remove(game);
                     OnGameFinished += OnGameFinish;
                     break;
                 case "challenge":
@@ -114,7 +116,7 @@ public class LichessBot
         var opponentRating = e.challenge.challenger.rating;
         if (opponentRating > 1500)
         {
-            if (e.challenge.challenger.name == "VladislavAlikin")
+            if (e.challenge.challenger.name == "VladislavAlikin" || e.challenge.challenger.name == "AlikinSergey")
             {
                 var isAccept = await AcceptChallangeAsync(e.challenge.id);
                 return;

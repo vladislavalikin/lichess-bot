@@ -11,8 +11,4 @@
     <PackageReference Include="ServiceStack.Client" Version="8.8.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LichessNET-master\LichessNET\LichessNET.csproj" />
-  </ItemGroup>
-
 </Project>
