@@ -36,7 +36,8 @@ public class LichessGame
 
     public async void StartEngine()
     {
-        const string TheProgram = @"SOS-51_Arena.exe";
+        //const string TheProgram = @"SOS-51_Arena.exe";
+        const string TheProgram = @"Rybkav2.3.2a.mp.x64.exe";
         engine = new Process();
         var psi = new ProcessStartInfo(TheProgram);
         psi.UseShellExecute = false;
@@ -82,10 +83,15 @@ public class LichessGame
         while (p.StandardOutput.ReadLine() != "readyok") { }
 
         p.StandardInput.WriteLine("ucinewgame");
+
+        p.StandardInput.WriteLine("isready");
+        while (p.StandardOutput.ReadLine() != "readyok") { }
+
     }
 
     public async void FinishGame()
     {
+        engine.Kill();
         engine.Close();
         Console.WriteLine("Game finished");
     }
@@ -140,8 +146,10 @@ public class LichessGame
         if (lcGame.Game.isMyTurn)
         {
             var bestmove = await GetBestMove(new GameStateEvent() { wtime = 10000, btime = 10000, winc = 0, binc = 0 });
+
             if (!bestmove.IsEmpty())
                 await lcGame.MakeMove(lcGame.Game.id, bestmove);
+
         }
     }
 

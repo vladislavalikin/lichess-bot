@@ -115,9 +115,7 @@ public class LichessBot
     {
         if (Games.Count >= 1)
             await DeclineChallageAsync(e.challenge.id);
-        if (e.challenge.rated)
-            await DeclineChallageAsync(e.challenge.id);
-
+  
         await AcceptChallangeAsync(e.challenge.id);
         return;
     }
