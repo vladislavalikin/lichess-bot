@@ -115,7 +115,9 @@ public class LichessBot
     {
         if (Games.Count >= 1)
             await DeclineChallageAsync(e.challenge.id);
-  
+        if (e.challenge.speed != "blitz" && e.challenge.speed != "bullet")
+            await DeclineChallageAsync(e.challenge.id);
+
         await AcceptChallangeAsync(e.challenge.id);
         return;
     }
