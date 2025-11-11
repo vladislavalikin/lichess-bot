@@ -19,9 +19,9 @@ public class LichessGame
 
     public Game Game { get; }
 
-    private Process engine;
-    public List<string> Moves = new List<string>();
-
+    private Process engineSpike;
+    private Process engineRybka;
+   
     public delegate void gameStateEvent(LichessGame game, GameStateEvent e);
     public event gameStateEvent OnGameState;
 
@@ -36,18 +36,27 @@ public class LichessGame
 
     public async void StartEngine()
     {
-        //const string TheProgram = @"SOS-51_Arena.exe";
-        const string TheProgram = @"Rybkav2.3.2a.mp.x64.exe";
-        engine = new Process();
-        var psi = new ProcessStartInfo(TheProgram);
-        psi.UseShellExecute = false;
-        psi.CreateNoWindow = true;
-        psi.RedirectStandardInput = true;
-        psi.RedirectStandardOutput = true;
-        engine.StartInfo = psi;
-        Console.WriteLine("Executing " + TheProgram);
-        engine.Start();
-        InitNewEngineGame(engine);
+        const string TheSpikeProgram = @"Spike1.4.exe";
+        const string TheRybkaProgram = @"Rybkav2.3.2a.mp.x64.exe";
+        engineSpike = new Process();
+        engineRybka = new Process();
+        var spsi = new ProcessStartInfo(TheSpikeProgram);
+        var rpsi = new ProcessStartInfo(TheRybkaProgram);
+        spsi.UseShellExecute = false;
+        spsi.CreateNoWindow = true;
+        spsi.RedirectStandardInput = true;
+        spsi.RedirectStandardOutput = true;
+        rpsi.UseShellExecute = false;
+        rpsi.CreateNoWindow = true;
+        rpsi.RedirectStandardInput = true;
+        rpsi.RedirectStandardOutput = true;
+        engineSpike.StartInfo = spsi;
+        engineRybka.StartInfo = rpsi;
+        Console.WriteLine("Executing " + TheSpikeProgram);
+        Console.WriteLine("Executing " + TheRybkaProgram);
+        engineSpike.Start();
+        engineRybka.Start();
+        InitNewEngineGame(engineSpike, engineRybka);
     }
 
     public async Task<string> GetBestMove(GameStateEvent gameState)
@@ -56,43 +65,79 @@ public class LichessGame
         var actualbtime = gameState.btime > 100000 ? 100000 : gameState.btime;
         var actualwinc = gameState.winc > 100000 ? 100000 : gameState.winc;
         var actualbinc = gameState.binc > 100000 ? 100000 : gameState.binc;
-        await engine.StandardInput.WriteLineAsync($"position startpos moves {gameState.moves ?? ""} ");
-        await engine.StandardInput.WriteLineAsync($"go wtime {actualwtime} btime {actualbtime} winc {actualwinc} binc {actualbinc}");
+
         var line = "";
-        
         var bestmove = "";
-        do
+        // e2e4 e5e6 ...
+        var movesCount = gameState.moves?.Split(' ').Count();
+        
+        if (movesCount <= 10)
         {
-            line = await engine.StandardOutput.ReadLineAsync();
-            if (line?.Contains("bestmove") ?? false)
-                bestmove = line.Split(' ')?[1]; // bestmove e2e4 ponder g1f1
+            await engineSpike.StandardInput.WriteLineAsync($"position startpos moves {gameState.moves ?? ""} ");
+            await engineSpike.StandardInput.WriteLineAsync($"go wtime {actualwtime} btime {actualbtime} winc {actualwinc} binc {actualbinc}");
 
+            do
+            {
+                line = await engineSpike.StandardOutput.ReadLineAsync();
+                if (line?.Contains("bestmove") ?? false)
+                    bestmove = line.Split(' ')?[1]; // bestmove e2e4 ponder g1f1
+
+            }
+            while (!line?.Contains("bestmove") ?? true);
         }
-        while (!line?.Contains("bestmove") ?? true);
+        else
+        {
+            await engineRybka.StandardInput.WriteLineAsync($"position startpos moves {gameState.moves ?? ""} ");
+            await engineRybka.StandardInput.WriteLineAsync($"go wtime {actualwtime} btime {actualbtime} winc {actualwinc} binc {actualbinc}");
 
+            do
+            {
+                line = await engineRybka.StandardOutput.ReadLineAsync();
+                if (line?.Contains("bestmove") ?? false)
+                    bestmove = line.Split(' ')?[1]; // bestmove e2e4 ponder g1f1
+
+            }
+            while (!line?.Contains("bestmove") ?? true);
+        }
         return bestmove ?? "";
     }
 
 
-    private void InitNewEngineGame(Process p)
+    private void InitNewEngineGame(Process sp, Process rp)
     {
-        p.StandardInput.WriteLine("uci");
-        while (p.StandardOutput.ReadLine() != "uciok") { }
+        // starting spike engine
+        sp.StandardInput.WriteLine("uci");
+        while (sp.StandardOutput.ReadLine() != "uciok") { }
 
-        p.StandardInput.WriteLine("isready");
-        while (p.StandardOutput.ReadLine() != "readyok") { }
+        sp.StandardInput.WriteLine("isready");
+        while (sp.StandardOutput.ReadLine() != "readyok") { }
 
-        p.StandardInput.WriteLine("ucinewgame");
+        sp.StandardInput.WriteLine("ucinewgame");
 
-        p.StandardInput.WriteLine("isready");
-        while (p.StandardOutput.ReadLine() != "readyok") { }
+        sp.StandardInput.WriteLine("isready");
+        while (sp.StandardOutput.ReadLine() != "readyok") { }
+
+        // starting rybka engine
+
+        rp.StandardInput.WriteLine("uci");
+        while (rp.StandardOutput.ReadLine() != "uciok") { }
+
+        rp.StandardInput.WriteLine("isready");
+        while (rp.StandardOutput.ReadLine() != "readyok") { }
+
+        rp.StandardInput.WriteLine("ucinewgame");
+
+        rp.StandardInput.WriteLine("isready");
+        while (rp.StandardOutput.ReadLine() != "readyok") { }
 
     }
 
     public async void FinishGame()
     {
-        engine.Kill();
-        engine.Close();
+        engineSpike.Kill();
+        engineSpike.Close();
+        engineRybka.Kill();
+        engineRybka.Close();
         Console.WriteLine("Game finished");
     }
 
