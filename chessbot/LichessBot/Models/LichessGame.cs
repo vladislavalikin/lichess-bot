@@ -71,8 +71,9 @@ public class LichessGame
         // e2e4 e5e6 ...
         var movesCount = gameState.moves?.Split(' ').Count();
         
-        if (movesCount <= 10)
+        if (movesCount <= 7)
         {
+            // opening, play Spike.
             await engineSpike.StandardInput.WriteLineAsync($"position startpos moves {gameState.moves ?? ""} ");
             await engineSpike.StandardInput.WriteLineAsync($"go wtime {actualwtime} btime {actualbtime} winc {actualwinc} binc {actualbinc}");
 
@@ -87,6 +88,7 @@ public class LichessGame
         }
         else
         {
+            // rybka play then, spike play opening
             await engineRybka.StandardInput.WriteLineAsync($"position startpos moves {gameState.moves ?? ""} ");
             await engineRybka.StandardInput.WriteLineAsync($"go wtime {actualwtime} btime {actualbtime} winc {actualwinc} binc {actualbinc}");
 
