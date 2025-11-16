@@ -183,7 +183,7 @@ public class LichessGame
                     break;
                 case "gameState":
                     var gameState = JsonSerializer.Deserialize<GameStateEvent>(message) ?? new GameStateEvent();
-                    if (gameState.status == "aborted")
+                    if (gameState.status != "started")
                         break;
                     OnGameState?.Invoke(this, gameState);
                     await OnGameStateChanged(this, gameState);
