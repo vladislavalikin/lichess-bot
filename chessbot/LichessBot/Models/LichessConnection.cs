@@ -31,7 +31,7 @@ public class LichessConnection
         return builder;
     }
 
-    public async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, HttpMethod method = null, HttpContent content = null)
+    public async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, HttpMethod method, HttpContent content)
     {
         if (method == null)
             method = HttpMethod.Get;

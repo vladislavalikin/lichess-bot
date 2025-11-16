@@ -2,6 +2,7 @@
 using chessbot.LichessBot.Models.StreamEventModels;
 using ServiceStack;
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using Game = chessbot.LichessBot.Models.StreamEventModels.Game;
 
@@ -34,7 +35,7 @@ public class LichessGame
         GameLoop();
     }
 
-    public async void StartEngine()
+    public void StartEngine()
     {
         const string TheSpikeProgram = @"Spike1.4.exe";
         const string TheRybkaProgram = @"Rybkav2.3.2a.mp.x64.exe";
@@ -134,7 +135,7 @@ public class LichessGame
 
     }
 
-    public async void FinishGame()
+    public void FinishGame()
     {
         engineSpike.Kill();
         engineSpike.Close();
@@ -151,14 +152,19 @@ public class LichessGame
         while (!streamReader.EndOfStream)
         {
             var message = await streamReader.ReadLineAsync();
+            if (message is null)
+            {
+                Console.WriteLine("Game loop message is null");
+                continue;
+            }
             Console.WriteLine($"Game message: {message}");
             if (message.IsEmpty())
                 continue;
-            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
+            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message) ?? new LCStreamEvent();
             switch (eventType.type)
             {
                 case "gameFull":
-                    var GameFull = JsonSerializer.Deserialize<GameFullEvent>(message);
+                    var GameFull = JsonSerializer.Deserialize<GameFullEvent>(message) ?? new GameFullEvent();
                     wtime = GameFull.state.wtime;
                     btime = GameFull.state.btime;
                     winc = GameFull.state.winc;
@@ -166,7 +172,7 @@ public class LichessGame
 
                     break;
                 case "gameState":
-                    var gameState = JsonSerializer.Deserialize<GameStateEvent>(message);
+                    var gameState = JsonSerializer.Deserialize<GameStateEvent>(message) ?? new GameStateEvent();
                     OnGameState?.Invoke(this, gameState);
                     OnGameStateChanged(this, gameState);
                     break;
@@ -184,11 +190,11 @@ public class LichessGame
     {
         var request = new HttpRequestMessage();
         request.RequestUri = Connection.GetUriBuilder($"https://lichess.org/api/bot/game/{gameId}/move/{move}").Uri;
-        var response = await Connection.SendRequestAsync(request, HttpMethod.Post);
+        var response = await Connection.SendRequestAsync(request, HttpMethod.Post, content: null);
         return response.Content.ReadAsStringAsync().Result.Contains("true");
     }
 
-    public async void OnGameStarted(LichessGame lcGame)
+    public async Task OnGameStarted(LichessGame lcGame)
     {
         if (lcGame.Game.isMyTurn)
         {

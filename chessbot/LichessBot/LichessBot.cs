@@ -48,37 +48,50 @@ public class LichessBot
         while (!streamReader.EndOfStream)
         {
             var message = await streamReader.ReadLineAsync();
+            if (message == null)
+            {
+                Console.WriteLine("message is null");
+                continue;
+            }
             Console.WriteLine($"Received message: {message}");
             if (message.IsEmpty())
                 continue;
-            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message);
+            var eventType = JsonSerializer.Deserialize<LCStreamEvent>(message) ?? new LCStreamEvent();
             switch (eventType.type)
             {
                 case "gameStart":
-                    var gameStarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message);
+                    Console.WriteLine("gameStart event");
+                    var gameStarted = JsonSerializer.Deserialize<LCGameStartedEvent>(message) ?? new LCGameStartedEvent();
                     var newGame = new LichessGame(Connection, gameStarted.game);
                     newGame.OnGameState += NewGame_OnGameState;
                     Games.Add(newGame);
-                    newGame.OnGameStarted(newGame);
+                    await newGame.OnGameStarted(newGame);
                     OnGameStarted?.Invoke(newGame);
                     break;
                 case "gameFinish":
-                    var gameFinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message);
-                    var game = Games.FirstOrDefault(g => g.Game.id == gameFinished.game.id);
-                    game.FinishGame();
-                    Games.Remove(game);
-                    OnGameFinished += OnGameFinish;
+                    Console.WriteLine("gameFinish event");
+                    var gameFinished = JsonSerializer.Deserialize<LCGameFinishedEvent>(message) ?? new LCGameFinishedEvent();
+                    var game = Games.FirstOrDefault(g => g.Game.id == gameFinished?.game.id);
+                    game?.FinishGame();
+                    if (game is not null) 
+                    {
+                        Games.Remove(game);
+                        OnGameFinished?.Invoke(gameFinished);
+                    }
                     break;
                 case "challenge":
-                    var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message);
+                    Console.WriteLine("challange event");
+                    var challange = JsonSerializer.Deserialize<LCChallangeEvent>(message) ?? new LCChallangeEvent();
                     OnChallanged?.Invoke(challange);
                     break;
                 case "challengeDeclined":
-                    var Declinedchallange = JsonSerializer.Deserialize<LCChallangeDeclinedEvent>(message);
+                    Console.WriteLine("challange declined event");
+                    var Declinedchallange = JsonSerializer.Deserialize<LCChallangeDeclinedEvent>(message) ?? new LCChallangeDeclinedEvent();
                     OnChallangeDeclined?.Invoke(Declinedchallange);
                     break;
                 case "challengeCanceled":
-                    var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message);
+                    Console.WriteLine("challange cancelled event");
+                    var challangeCanceled = JsonSerializer.Deserialize<LCChallangeCanceledEvent>(message) ?? new LCChallangeCanceledEvent();
                     OnChallangeCanceled?.Invoke(challangeCanceled);
                     break;
             }
@@ -90,16 +103,11 @@ public class LichessBot
         OnGameState?.Invoke(game, e);
     }
 
-    private void OnGameFinish(LCGameFinishedEvent e)
-    {
-        
-    }
-
     public async Task<bool> AcceptChallangeAsync(string challengeId)
     {
         var request = new HttpRequestMessage();
         request.RequestUri = Connection.GetUriBuilder($"https://lichess.org/api/challenge/{challengeId}/accept").Uri;
-        var response = await Connection.SendRequestAsync(request, HttpMethod.Post);
+        var response = await Connection.SendRequestAsync(request, HttpMethod.Post, content: null);
         return response.Content.ReadAsStringAsync().Result.Contains("true");
     }
 
@@ -107,11 +115,11 @@ public class LichessBot
     {
         var request = new HttpRequestMessage();
         request.RequestUri = Connection.GetUriBuilder($"https://lichess.org/api/challenge/{challengeId}/decline").Uri;
-        var response = await Connection.SendRequestAsync(request, HttpMethod.Post);
+        var response = await Connection.SendRequestAsync(request, HttpMethod.Post, content: null);
         return response.Content.ReadAsStringAsync().Result.Contains("true");
     }
 
-    async void LichessBot_OnChallanged(LCChallangeEvent e)
+    public async void LichessBot_OnChallanged(LCChallangeEvent e)
     {
         if (Games.Count >= 1)
             await DeclineChallageAsync(e.challenge.id);
@@ -119,6 +127,5 @@ public class LichessBot
             await DeclineChallageAsync(e.challenge.id);
 
         await AcceptChallangeAsync(e.challenge.id);
-        return;
     }
 }
