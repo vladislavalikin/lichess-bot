@@ -170,11 +170,11 @@ public class LichessGame
                     winc = GameFull.state.winc;
                     binc = GameFull.state.binc;
 
-                    var gs = new GameStateEvent 
+                    var gs = new GameStateEvent
                     {
                         moves = GameFull.state.moves,
                         wtime = GameFull.state.wtime,
-                        btime = GameFull.state.btime, 
+                        btime = GameFull.state.btime,
                         winc = GameFull.state.winc,
                         binc = GameFull.state.binc
                     };
@@ -183,6 +183,8 @@ public class LichessGame
                     break;
                 case "gameState":
                     var gameState = JsonSerializer.Deserialize<GameStateEvent>(message) ?? new GameStateEvent();
+                    if (gameState.status == "aborted")
+                        break;
                     OnGameState?.Invoke(this, gameState);
                     await OnGameStateChanged(this, gameState);
                     break;
