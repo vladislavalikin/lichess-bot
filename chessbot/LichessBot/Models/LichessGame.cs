@@ -170,11 +170,21 @@ public class LichessGame
                     winc = GameFull.state.winc;
                     binc = GameFull.state.binc;
 
+                    var gs = new GameStateEvent 
+                    {
+                        moves = GameFull.state.moves,
+                        wtime = GameFull.state.wtime,
+                        btime = GameFull.state.btime, 
+                        winc = GameFull.state.winc,
+                        binc = GameFull.state.binc
+                    };
+                    await OnGameStateChanged(this, gs);
+
                     break;
                 case "gameState":
                     var gameState = JsonSerializer.Deserialize<GameStateEvent>(message) ?? new GameStateEvent();
                     OnGameState?.Invoke(this, gameState);
-                    OnGameStateChanged(this, gameState);
+                    await OnGameStateChanged(this, gameState);
                     break;
                 case "opponentGone":
                     var OpponentGone = JsonSerializer.Deserialize<OpponentGoneEvent>(message);
@@ -206,7 +216,7 @@ public class LichessGame
         }
     }
 
-    public async void OnGameStateChanged(LichessGame lcGame, GameStateEvent e)
+    public async Task OnGameStateChanged(LichessGame lcGame, GameStateEvent e)
     {
         var color = lcGame.Game.color;
         var turns = e.moves.Split(' ').ToList();
