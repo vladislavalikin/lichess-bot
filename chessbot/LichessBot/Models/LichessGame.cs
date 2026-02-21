@@ -38,7 +38,7 @@ public class LichessGame
 
     public void StartEngine()
     {
-        const string TheProgram = @"Uralochka3.40a-sse.exe";
+        const string TheProgram = @"Uralochka3.42a-sse.exe";
         engineKozachka = new Process();
         var psi = new ProcessStartInfo(TheProgram);
         psi.UseShellExecute = false;
