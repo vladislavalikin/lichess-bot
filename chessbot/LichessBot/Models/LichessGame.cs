@@ -38,17 +38,30 @@ public class LichessGame
 
     public void StartEngine()
     {
-        const string TheProgram = @"Uralochka3.42a-sse.exe";
-        engineKozachka = new Process();
-        var psi = new ProcessStartInfo(TheProgram);
-        psi.UseShellExecute = false;
-        psi.CreateNoWindow = true;
-        psi.RedirectStandardInput = true;
-        psi.RedirectStandardOutput = true;
-        engineKozachka.StartInfo = psi;
-        Console.WriteLine("Executing" + TheProgram);
-        engineKozachka.Start();
-        InitNewEngineGame(engineKozachka);
+        string configFile = "chessbot.txt";
+        if (!File.Exists(configFile))
+        {
+            Console.WriteLine($"File '{configFile}' with your token doesnt exists, firdt download this file");
+            Console.ReadKey();
+            return;
+        }
+        var settings = File.ReadAllLines(configFile)
+        .Where(line => !string.IsNullOrWhiteSpace(line) && line.Contains('='))
+        .Select(line => line.Split('=', 2))
+        .ToDictionary(parts => parts[0].Trim(), parts => parts[1].Trim());
+        if (settings.TryGetValue("ChessEngine", out string ChessEngine))
+        {
+            engineKozachka = new Process();
+            var psi = new ProcessStartInfo(ChessEngine);
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.RedirectStandardInput = true;
+            psi.RedirectStandardOutput = true;
+            engineKozachka.StartInfo = psi;
+            Console.WriteLine("Executing" + ChessEngine);
+            engineKozachka.Start();
+            InitNewEngineGame(engineKozachka);
+        }
     }
 
     public async Task<string> GetBestMove(GameStateEvent gameState)
